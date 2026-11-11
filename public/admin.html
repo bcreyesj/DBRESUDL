@@ -85,16 +85,24 @@
           <div class="content-grid">
             <section class="panel">
               <div class="panel-header"><h3>Órdenes activas</h3><span class="eyebrow">Servicio actual</span></div>
+              <div class="search-toolbar">
+                <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="overview-orders" data-search-label="órdenes" data-search-columns="4" aria-label="Buscar órdenes activas" placeholder="Buscar comanda, mesa o estado"></label>
+                <span id="overview-orders-search-count" class="search-count" aria-live="polite"></span>
+              </div>
               <div class="table-wrap">
                 <table class="data-table">
                   <thead><tr><th>Comanda</th><th>Mesa</th><th>Estado</th><th>Total</th></tr></thead>
-                  <tbody id="overview-orders"></tbody>
+                  <tbody id="overview-orders"><tr id="overview-orders-no-results" hidden><td colspan="4" class="empty-state">No hay órdenes que coincidan con la búsqueda.</td></tr></tbody>
                 </table>
               </div>
             </section>
             <section class="panel">
               <div class="panel-header"><h3>Atención de inventario</h3><span class="status status-pending">Revisar</span></div>
-              <div id="overview-stock" class="panel-body low-stock-list"></div>
+              <div class="search-toolbar">
+                <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="overview-stock" data-search-label="ingredientes" aria-label="Buscar alertas de inventario" placeholder="Buscar ingrediente"></label>
+                <span id="overview-stock-search-count" class="search-count" aria-live="polite"></span>
+              </div>
+              <div id="overview-stock" class="panel-body low-stock-list"><div id="overview-stock-no-results" class="empty-state" hidden>No hay ingredientes que coincidan con la búsqueda.</div></div>
             </section>
           </div>
         </section>
@@ -109,19 +117,27 @@
           </div>
           <section class="panel">
             <div class="panel-header"><h3>Platillos</h3><span id="menu-count" class="muted small"></span></div>
+            <div class="search-toolbar">
+              <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="menu-table" data-search-label="platillos" data-search-columns="5" aria-label="Buscar platillos" placeholder="Buscar por nombre, categoría o precio"></label>
+              <span id="menu-table-search-count" class="search-count" aria-live="polite"></span>
+            </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Platillo</th><th>Categoría</th><th>Precio</th><th>Disponibilidad</th><th></th></tr></thead>
-                <tbody id="menu-table"></tbody>
+                <tbody id="menu-table"><tr id="menu-table-no-results" hidden><td colspan="5" class="empty-state">No hay platillos que coincidan con la búsqueda.</td></tr></tbody>
               </table>
             </div>
           </section>
           <section class="panel panel-spaced">
             <div class="panel-header"><h3>Categorías del menú</h3></div>
+            <div class="search-toolbar">
+              <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="categories-table" data-search-label="categorías" data-search-columns="3" aria-label="Buscar categorías" placeholder="Buscar categoría"></label>
+              <span id="categories-table-search-count" class="search-count" aria-live="polite"></span>
+            </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Nombre</th><th>Estado</th><th></th></tr></thead>
-                <tbody id="categories-table"></tbody>
+                <tbody id="categories-table"><tr id="categories-table-no-results" hidden><td colspan="3" class="empty-state">No hay categorías que coincidan con la búsqueda.</td></tr></tbody>
               </table>
             </div>
           </section>
@@ -134,10 +150,14 @@
           </div>
           <section class="panel">
             <div class="panel-header"><h3>Equipo registrado</h3></div>
+            <div class="search-toolbar">
+              <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="staff-table" data-search-label="empleados" data-search-columns="5" aria-label="Buscar empleados" placeholder="Buscar por nombre, usuario o rol"></label>
+              <span id="staff-table-search-count" class="search-count" aria-live="polite"></span>
+            </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
-                <tbody id="staff-table"></tbody>
+                <tbody id="staff-table"><tr id="staff-table-no-results" hidden><td colspan="5" class="empty-state">No hay empleados que coincidan con la búsqueda.</td></tr></tbody>
               </table>
             </div>
           </section>
@@ -149,10 +169,14 @@
             <span id="inventory-alert-count" class="status status-pending">Cargando</span>
           </div>
           <section class="panel">
+            <div class="search-toolbar">
+              <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="inventory-table" data-search-label="ingredientes" data-search-columns="6" aria-label="Buscar ingredientes" placeholder="Buscar por ingrediente, unidad o estado"></label>
+              <span id="inventory-table-search-count" class="search-count" aria-live="polite"></span>
+            </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Ingrediente</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
-                <tbody id="inventory-table"></tbody>
+                <tbody id="inventory-table"><tr id="inventory-table-no-results" hidden><td colspan="6" class="empty-state">No hay ingredientes que coincidan con la búsqueda.</td></tr></tbody>
               </table>
             </div>
           </section>
@@ -164,10 +188,14 @@
           </div>
           <section class="panel">
             <div class="panel-header"><h3>Platillos con receta</h3><span class="muted small">Seleccione una receta para editar sus ingredientes</span></div>
+            <div class="search-toolbar">
+              <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="recipes-table" data-search-label="platillos" data-search-columns="5" aria-label="Buscar platillos con receta" placeholder="Buscar platillo o categoría"></label>
+              <span id="recipes-table-search-count" class="search-count" aria-live="polite"></span>
+            </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Platillo</th><th>Categoría</th><th>Precio</th><th>Ingredientes</th><th></th></tr></thead>
-                <tbody id="recipes-table"></tbody>
+                <tbody id="recipes-table"><tr id="recipes-table-no-results" hidden><td colspan="5" class="empty-state">No hay platillos que coincidan con la búsqueda.</td></tr></tbody>
               </table>
             </div>
           </section>
@@ -192,11 +220,19 @@
           <div class="content-grid">
             <section class="panel">
               <div class="panel-header"><h3>Ingresos por día</h3></div>
-              <div id="sales-daily" class="panel-body bar-list"></div>
+              <div class="search-toolbar">
+                <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="sales-daily" data-search-label="días" aria-label="Buscar ingresos por día" placeholder="Buscar fecha"></label>
+                <span id="sales-daily-search-count" class="search-count" aria-live="polite"></span>
+              </div>
+              <div id="sales-daily" class="panel-body bar-list"><div id="sales-daily-no-results" class="empty-state" hidden>No hay fechas que coincidan con la búsqueda.</div></div>
             </section>
             <section class="panel">
               <div class="panel-header"><h3>Método de pago</h3></div>
-              <div id="sales-methods" class="panel-body bar-list"></div>
+              <div class="search-toolbar">
+                <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="sales-methods" data-search-label="métodos" aria-label="Buscar métodos de pago" placeholder="Buscar método"></label>
+                <span id="sales-methods-search-count" class="search-count" aria-live="polite"></span>
+              </div>
+              <div id="sales-methods" class="panel-body bar-list"><div id="sales-methods-no-results" class="empty-state" hidden>No hay métodos que coincidan con la búsqueda.</div></div>
             </section>
           </div>
         </section>
@@ -206,10 +242,14 @@
             <div><h2 id="audit-title">Auditoría del sistema</h2><p>Registro reciente de acciones realizadas por el equipo.</p></div>
           </div>
           <section class="panel">
+            <div class="search-toolbar">
+              <label class="search-field"><span aria-hidden="true">⌕</span><input type="search" data-search-for="audit-table" data-search-label="registros" data-search-columns="3" aria-label="Buscar auditoría" placeholder="Buscar usuario, acción o fecha"></label>
+              <span id="audit-table-search-count" class="search-count" aria-live="polite"></span>
+            </div>
             <div class="table-wrap">
               <table class="data-table">
                 <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th></tr></thead>
-                <tbody id="audit-table"></tbody>
+                <tbody id="audit-table"><tr id="audit-table-no-results" hidden><td colspan="3" class="empty-state">No hay registros que coincidan con la búsqueda.</td></tr></tbody>
               </table>
             </div>
           </section>

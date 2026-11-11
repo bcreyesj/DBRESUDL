@@ -2,6 +2,7 @@
 // Coordina navegación, indicadores y formularios de administración por módulos.
 import { apiFetch } from './api.js';
 import { cerrarSesion, configurarUsuario, exigirRol } from './auth.js';
+import { aplicarBuscadores, configurarBuscadores } from './search.js';
 
 const $ = (selector, raiz = document) => raiz.querySelector(selector);
 const $$ = (selector, raiz = document) => [...raiz.querySelectorAll(selector)];
@@ -61,7 +62,7 @@ async function cargarResumen() {
     $('#kpi-stock').textContent = resumen.indicadores.alertas_stock;
     $('#overview-orders').innerHTML = resumen.actividad.length
       ? resumen.actividad.map((orden) => `
-        <tr>
+        <tr data-search-item>
           <td class="table-primary">#${orden.id_orden}</td>
           <td>Mesa ${escapar(orden.numero_mesa)}</td>
           <td><span class="status ${estadoOrden(orden.estado)}">${escapar(orden.estado)}</span></td>
@@ -70,11 +71,12 @@ async function cargarResumen() {
       : celdaVacia(4, 'No hay órdenes activas en este momento.');
     $('#overview-stock').innerHTML = resumen.alertas.length
       ? resumen.alertas.map((item) => `
-        <div class="stock-row">
+        <div class="stock-row" data-search-item>
           <div><div class="stock-name">${escapar(item.nombre)}</div><div class="stock-amount">Mínimo: ${escapar(item.stock_minimo)} ${escapar(item.unidad_medida)}</div></div>
           <span class="status status-pending">${escapar(item.stock_actual)} ${escapar(item.unidad_medida)}</span>
         </div>`).join('')
       : '<div class="empty-state">No hay ingredientes por debajo del mínimo.</div>';
+    aplicarBuscadores();
   } catch (error) {
     mostrarAviso(error.message, 'error');
   }
@@ -87,7 +89,7 @@ async function cargarMenu() {
   $('#menu-count').textContent = `${estado.platillos.length} platillos`;
   $('#menu-table').innerHTML = estado.platillos.length
     ? estado.platillos.map((platillo) => `
-      <tr>
+      <tr data-search-item>
         <td><div class="table-primary">${escapar(platillo.nombre)}</div><div class="table-secondary">${escapar(platillo.descripcion || 'Sin descripción')}</div></td>
         <td>${escapar(platillo.categoria)}</td>
         <td>${moneda(platillo.precio)}</td>
@@ -100,7 +102,7 @@ async function cargarMenu() {
     : celdaVacia(5, 'Todavía no hay platillos registrados.');
   $('#categories-table').innerHTML = estado.categorias.length
     ? estado.categorias.map((categoria) => `
-      <tr>
+      <tr data-search-item>
         <td class="table-primary">${escapar(categoria.nombre)}</td>
         <td><span class="status ${categoria.activa ? 'status-completed' : 'status-neutral'}">${categoria.activa ? 'Activa' : 'Inactiva'}</span></td>
         <td><div class="table-actions">
@@ -109,6 +111,7 @@ async function cargarMenu() {
         </div></td>
       </tr>`).join('')
     : celdaVacia(3, 'No hay categorías registradas.');
+  aplicarBuscadores();
 }
 
 async function cargarPersonal() {
@@ -116,7 +119,7 @@ async function cargarPersonal() {
   estado.empleados = resultado.empleados;
   $('#staff-table').innerHTML = estado.empleados.length
     ? estado.empleados.map((empleado) => `
-      <tr>
+      <tr data-search-item>
         <td class="table-primary">${escapar(empleado.nombre)}</td>
         <td>${escapar(empleado.usuario)}</td>
         <td>${Number(empleado.rol_id) === 1 ? 'Administrador' : 'Empleado'}</td>
@@ -124,6 +127,7 @@ async function cargarPersonal() {
         <td><div class="table-actions"><button class="button button-small button-secondary" type="button" data-edit-staff="${empleado.id_empleado}">Editar</button></div></td>
       </tr>`).join('')
     : celdaVacia(5, 'No hay empleados registrados.');
+  aplicarBuscadores();
 }
 
 async function cargarInventario() {
@@ -133,7 +137,7 @@ async function cargarInventario() {
   $('#inventory-alert-count').textContent = `${alertas} ${alertas === 1 ? 'alerta' : 'alertas'}`;
   $('#inventory-table').innerHTML = estado.ingredientes.length
     ? estado.ingredientes.map((ingrediente) => `
-      <tr>
+      <tr data-search-item>
         <td class="table-primary">${escapar(ingrediente.nombre)}</td>
         <td>${escapar(ingrediente.stock_actual)}</td>
         <td>${escapar(ingrediente.stock_minimo)}</td>
@@ -142,13 +146,14 @@ async function cargarInventario() {
         <td><div class="table-actions"><button class="button button-small button-secondary" type="button" data-edit-stock="${ingrediente.id_ingrediente}">Ajustar</button></div></td>
       </tr>`).join('')
     : celdaVacia(6, 'No hay ingredientes registrados.');
+  aplicarBuscadores();
 }
 
 async function cargarRecetas() {
   if (!estado.platillos.length) await cargarMenu();
   $('#recipes-table').innerHTML = estado.platillos.length
     ? estado.platillos.map((platillo) => `
-      <tr>
+      <tr data-search-item>
         <td class="table-primary">${escapar(platillo.nombre)}</td>
         <td>${escapar(platillo.categoria)}</td>
         <td>${moneda(platillo.precio)}</td>
@@ -156,13 +161,14 @@ async function cargarRecetas() {
         <td><div class="table-actions"><button class="button button-small button-secondary" type="button" data-edit-recipe="${platillo.id_platillo}">Editar receta</button></div></td>
       </tr>`).join('')
     : celdaVacia(5, 'Agregue un platillo antes de asociar sus ingredientes.');
+  aplicarBuscadores();
 }
 
 function barras(items, etiqueta, valor) {
   if (!items.length) return '<div class="empty-state">No hay pagos registrados en este periodo.</div>';
   const mayor = Math.max(...items.map((item) => Number(item[valor]) || 0), 1);
   return items.map((item) => `
-    <div class="bar-item">
+    <div class="bar-item" data-search-item>
       <span class="bar-label">${escapar(etiqueta(item))}</span>
       <span class="bar-track"><span class="bar-fill" style="width:${Math.max(3, Number(item[valor]) / mayor * 100)}%"></span></span>
       <span class="bar-value">${moneda(item[valor])}</span>
@@ -176,18 +182,20 @@ async function cargarVentas() {
   $('#sales-method-count').textContent = datos.metodos.length;
   $('#sales-daily').innerHTML = barras(datos.diario, (item) => fecha(item.fecha), 'ingresos');
   $('#sales-methods').innerHTML = barras(datos.metodos, (item) => item.metodo, 'monto');
+  aplicarBuscadores();
 }
 
 async function cargarAuditoria() {
   const datos = await apiFetch('/audit');
   $('#audit-table').innerHTML = datos.eventos.length
     ? datos.eventos.map((evento) => `
-      <tr>
+      <tr data-search-item>
         <td>${fecha(evento.fecha, true)}</td>
         <td class="table-primary">${escapar(evento.usuario)}</td>
         <td>${escapar(evento.accion)}</td>
       </tr>`).join('')
     : celdaVacia(3, 'Todavía no hay acciones registradas.');
+  aplicarBuscadores();
 }
 
 const cargadores = {
@@ -345,12 +353,20 @@ async function formularioReceta(platillo) {
   const filas = datosReceta.receta.length ? datosReceta.receta : [{ id_ingrediente: '', cantidad_requerida: '' }];
   const opciones = (seleccionado) => `<option value="">Seleccione un ingrediente</option>${estado.ingredientes.map((ingrediente) => `
     <option value="${ingrediente.id_ingrediente}" ${Number(seleccionado) === Number(ingrediente.id_ingrediente) ? 'selected' : ''}>${escapar(ingrediente.nombre)} (${escapar(ingrediente.unidad_medida)})</option>`).join('')}`;
-  const filaHtml = (fila) => `
-    <div class="recipe-row">
-      <label class="field">Ingrediente<select class="recipe-ingredient" required>${opciones(fila.id_ingrediente)}</select></label>
-      <label class="field">Cantidad<input class="recipe-quantity" type="number" min="0.001" step="0.001" required value="${escapar(fila.cantidad_requerida)}"></label>
-      <button class="icon-button recipe-remove" type="button" aria-label="Quitar ingrediente">×</button>
-    </div>`;
+  let indiceBusquedaIngrediente = 0;
+  const filaHtml = (fila) => {
+    const idBusqueda = `recipe-ingredient-search-${++indiceBusquedaIngrediente}`;
+    return `
+      <div class="recipe-row">
+        <div class="field">
+          <label for="${idBusqueda}">Ingrediente</label>
+          <input id="${idBusqueda}" class="recipe-ingredient-search" type="search" data-filter-options placeholder="Buscar ingrediente">
+          <select class="recipe-ingredient" aria-label="Ingrediente seleccionado de la receta" required>${opciones(fila.id_ingrediente)}</select>
+        </div>
+        <label class="field">Cantidad<input class="recipe-quantity" type="number" min="0.001" step="0.001" required value="${escapar(fila.cantidad_requerida)}"></label>
+        <button class="icon-button recipe-remove" type="button" aria-label="Quitar ingrediente">×</button>
+      </div>`;
+  };
   abrirDrawer(`Receta: ${platillo.nombre}`, `
     <form id="drawer-form" class="drawer-form">
       <div id="recipe-rows">${filas.map(filaHtml).join('')}</div>
@@ -386,6 +402,7 @@ async function formularioReceta(platillo) {
 }
 
 function iniciarNavegacion() {
+  configurarBuscadores();
   $$('.nav-link').forEach((enlace) => enlace.addEventListener('click', (evento) => {
     evento.preventDefault();
     mostrarVista(enlace.dataset.view);

@@ -107,6 +107,39 @@ BEGIN
 END;
 GO
 
+-- Amplía el catálogo de estados para instalaciones que conservan la restricción anterior.
+IF OBJECT_ID(N'dbo.ordenes', N'U') IS NOT NULL
+BEGIN
+    DECLARE @restriccionEstado SYSNAME;
+    WHILE 1 = 1
+    BEGIN
+        SET @restriccionEstado = NULL;
+        SELECT TOP (1) @restriccionEstado = name
+        FROM sys.check_constraints
+        WHERE parent_object_id = OBJECT_ID(N'dbo.ordenes')
+          AND (definition LIKE N'%En Proceso%' OR definition LIKE N'%Servida%');
+
+        IF @restriccionEstado IS NULL BREAK;
+        DECLARE @comandoEstado NVARCHAR(300) =
+            N'ALTER TABLE dbo.ordenes DROP CONSTRAINT ' + QUOTENAME(@restriccionEstado);
+        EXEC sys.sp_executesql @comandoEstado;
+    END;
+
+    IF NOT EXISTS (
+        SELECT 1 FROM sys.check_constraints
+        WHERE parent_object_id = OBJECT_ID(N'dbo.ordenes')
+          AND name = N'CK_ordenes_estado'
+    )
+        ALTER TABLE dbo.ordenes WITH NOCHECK
+        ADD CONSTRAINT CK_ordenes_estado CHECK (
+            estado IN (
+                N'Pendiente', N'En preparacion', N'Listo', N'Entregado', N'Pagado', N'Cancelado',
+                N'En Proceso', N'Servida', N'Pagada', N'Cancelada'
+            )
+        );
+END;
+GO
+
 IF OBJECT_ID(N'dbo.detalle_ordenes', N'U') IS NULL
 BEGIN
     CREATE TABLE dbo.detalle_ordenes (

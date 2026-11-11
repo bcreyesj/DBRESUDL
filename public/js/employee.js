@@ -2,6 +2,7 @@
 // Sincroniza el mapa, el menú, el carrito y el avance de las comandas.
 import { apiFetch } from './api.js';
 import { cerrarSesion, configurarUsuario, exigirRol } from './auth.js';
+import { aplicarBuscadores, configurarBuscadores } from './search.js';
 
 const $ = (selector, raiz = document) => raiz.querySelector(selector);
 const $$ = (selector, raiz = document) => [...raiz.querySelectorAll(selector)];
@@ -70,6 +71,7 @@ async function cargarDatos() {
   renderMesas();
   renderMenu();
   renderCocina();
+  aplicarBuscadores();
   if (estado.mesaSeleccionada) {
     const mesaActualizada = estado.mesas.find((mesa) => mesa.id_mesa === estado.mesaSeleccionada.id_mesa);
     if (mesaActualizada) {
@@ -92,7 +94,7 @@ function renderMesas() {
     const accion = mesa.estado === 'Limpieza' ? 'Marcar como disponible' :
       (mesa.id_orden ? `Comanda #${mesa.id_orden}` : 'Abrir comanda');
     return `
-      <button class="table-card${seleccionada ? ' is-selected' : ''}" type="button"
+      <button class="table-card${seleccionada ? ' is-selected' : ''}" type="button" data-search-item
         data-table-id="${mesa.id_mesa}" data-status="${escapar(mesa.estado)}"
         aria-label="Mesa ${escapar(mesa.numero_mesa)}, ${escapar(mesa.estado)}, capacidad ${escapar(mesa.capacidad)}">
         <span class="table-card-top"><span class="table-number">${escapar(mesa.numero_mesa)}</span><span class="status ${clase}">${escapar(mesa.estado)}</span></span>
@@ -100,6 +102,7 @@ function renderMesas() {
         <span class="table-card-bottom"><span>${mesa.total_orden ? moneda(mesa.total_orden) : 'Sin cuenta abierta'}</span><span>${escapar(accion)} →</span></span>
       </button>`;
   }).join('');
+  aplicarBuscadores();
 }
 
 function renderMenu() {
@@ -111,11 +114,12 @@ function renderMenu() {
     estado.categoriaActiva === 'Todas' || platillo.categoria === estado.categoriaActiva);
   $('#dish-grid').innerHTML = platillos.length
     ? platillos.map((platillo) => `
-      <article class="dish-card">
+      <article class="dish-card" data-search-item>
         <div><h3>${escapar(platillo.nombre)}</h3><p>${escapar(platillo.descripcion || 'Preparado al momento.')}</p></div>
         <div class="dish-card-bottom"><span class="dish-price">${moneda(platillo.precio)}</span><button class="button button-small" type="button" data-add-dish="${platillo.id_platillo}" ${!estado.mesaSeleccionada || estado.mesaSeleccionada.estado === 'Limpieza' || (estado.ordenSeleccionada && !['Pendiente', 'En preparacion'].includes(estado.ordenSeleccionada.estado)) ? 'disabled' : ''}>Agregar +</button></div>
       </article>`).join('')
     : '<div class="empty-state">No hay platillos disponibles en esta categoría.</div>';
+  aplicarBuscadores();
 }
 
 function renderCarrito() {
@@ -172,7 +176,7 @@ function tarjetaOrden(orden, columna) {
         <button class="button button-small" type="button" data-pay="${orden.id_orden}">Cobrar</button>
       </div>`;
   return `
-    <article class="order-card">
+    <article class="order-card" data-search-item>
       <div class="order-card-head"><div><h4>Mesa ${escapar(orden.numero_mesa)}</h4><span class="muted small">Comanda #${orden.id_orden}</span></div><span class="status ${columna.estado === 'Pendiente' ? 'status-pending' : columna.estado === 'Entregado' ? 'status-completed' : 'status-preparing'}">${escapar(orden.estado)}</span></div>
       <ul class="order-lines">${lineas || '<li>Sin platillos registrados</li>'}</ul>
       <div class="order-card-foot"><strong>${moneda(orden.total)}</strong>${accion}</div>
@@ -185,12 +189,15 @@ function renderCocina() {
     const ordenes = estado.ordenes.filter((orden) => orden.estado === columna.estado);
     return `
       <section class="kitchen-column" aria-label="${escapar(columna.titulo)}">
-        <div class="kitchen-column-header"><h3>${escapar(columna.titulo)}</h3><span class="kitchen-count">${ordenes.length}</span></div>
-        <div class="kitchen-cards">${ordenes.length
+        <div class="kitchen-column-header"><h3>${escapar(columna.titulo)}</h3><span class="kitchen-count" data-search-group-count>${ordenes.length}</span></div>
+        <div class="kitchen-cards" data-search-group>${ordenes.length
           ? ordenes.map((orden) => tarjetaOrden(orden, columna)).join('')
-          : '<div class="empty-state">Sin comandas</div>'}</div>
+          : '<div class="empty-state">Sin comandas</div>'}
+          <div class="empty-state" data-search-group-empty hidden>Sin comandas que coincidan con la búsqueda.</div>
+        </div>
       </section>`;
   }).join('');
+  aplicarBuscadores();
 }
 
 async function seleccionarMesa(id) {
@@ -241,7 +248,8 @@ async function avanzarOrden(id, siguiente) {
       method: 'PATCH',
       body: JSON.stringify({ estado: siguiente })
     });
-    mostrarAviso(`Comanda #${id} actualizada: ${siguiente}.`, 'success');
+    const etiquetaEstado = columnasOrden.find((columna) => columna.estado === siguiente)?.titulo || siguiente;
+    mostrarAviso(`Comanda #${id} actualizada: ${etiquetaEstado}.`, 'success');
     await cargarDatos();
   } catch (error) {
     mostrarAviso(error.message, 'error');
@@ -260,7 +268,7 @@ async function cobrarOrden(id, boton) {
       method: 'POST',
       body: JSON.stringify({ id_metodo_pago: Number(metodo) })
     });
-    mostrarAviso(`Comanda #${id} cobrada. La mesa pasó a limpieza.`, 'success');
+    mostrarAviso(`Comanda #${id} cobrada y registrada.`, 'success');
     await cargarDatos();
   } catch (error) {
     mostrarAviso(error.message, 'error');
@@ -284,6 +292,7 @@ function mostrarVista(nombre) {
 }
 
 function iniciarEventos() {
+  configurarBuscadores();
   $$('.nav-link').forEach((enlace) => enlace.addEventListener('click', (evento) => {
     evento.preventDefault();
     mostrarVista(enlace.dataset.view);

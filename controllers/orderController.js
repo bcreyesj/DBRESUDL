@@ -3,20 +3,23 @@ const { getPool, sql } = require('../config/db');
 const HttpError = require('../utils/httpError');
 const { registrarAuditoria } = require('../utils/audit');
 
-const ESTADOS_ORDEN = ['Pendiente', 'En preparacion', 'Listo', 'Entregado', 'Pagada', 'Cancelada'];
+const SIGUIENTE_ESTADO_ORDEN = {
+  Pendiente: 'En preparacion',
+  'En preparacion': 'Listo',
+  Listo: 'Entregado'
+};
+const ESTADOS_SIGUIENTES = Object.values(SIGUIENTE_ESTADO_ORDEN);
+const ETIQUETAS_ESTADO = { 'En preparacion': 'En preparación' };
 
-// Mapeo de DB -> Frontend
+// Convierte los estados históricos a las etapas actuales de la interfaz.
 function mapearEstadoFrontend(estadoDb) {
-  if (estadoDb === 'En Proceso') return 'Pendiente';
-  if (estadoDb === 'Servida') return 'Entregado';
-  return estadoDb || 'Pendiente';
-}
-
-// Mapeo de Frontend -> DB
-function mapearEstadoDb(estadoFrontend) {
-  if (estadoFrontend === 'Pendiente' || estadoFrontend === 'En preparacion') return 'En Proceso';
-  if (estadoFrontend === 'Listo' || estadoFrontend === 'Entregado') return 'Servida';
-  return estadoFrontend;
+  const estadosHistoricos = {
+    'En Proceso': 'Pendiente',
+    Servida: 'Entregado',
+    Pagada: 'Pagado',
+    Cancelada: 'Cancelado'
+  };
+  return estadosHistoricos[estadoDb] || estadoDb || 'Pendiente';
 }
 
 function agruparOrdenes(registros) {
@@ -73,7 +76,7 @@ async function listOrders(solicitud, respuesta) {
       ) AS totales ON totales.id_orden = o.id_orden
       LEFT JOIN dbo.detalle_ordenes AS d ON d.id_orden = o.id_orden
       LEFT JOIN dbo.platillos AS pl ON pl.id_platillo = d.id_platillo
-      WHERE o.estado NOT IN (N'Pagada', N'Cancelada')
+      WHERE o.estado NOT IN (N'Pagado', N'Cancelado', N'Pagada', N'Cancelada')
         AND (@mesaId IS NULL OR o.id_mesa = @mesaId)
       ORDER BY o.fecha_hora DESC, d.id_detalle;
     `);
@@ -116,7 +119,7 @@ async function createOrder(solicitud, respuesta) {
       .query(`
         SELECT TOP (1) id_orden, estado
         FROM dbo.ordenes WITH (UPDLOCK, HOLDLOCK)
-        WHERE id_mesa = @mesaId AND estado NOT IN (N'Pagada', N'Cancelada')
+        WHERE id_mesa = @mesaId AND estado NOT IN (N'Pagado', N'Cancelado', N'Pagada', N'Cancelada')
         ORDER BY fecha_hora DESC;
       `);
     if (ordenActiva.recordset.length) {
@@ -130,7 +133,7 @@ async function createOrder(solicitud, respuesta) {
 
           INSERT INTO dbo.ordenes (id_mesa, id_mesero, estado)
           OUTPUT INSERTED.id_orden INTO @InsertedIds
-          VALUES (@mesaId, @meseroId, N'En Proceso');
+          VALUES (@mesaId, @meseroId, N'Pendiente');
 
           SELECT id_orden FROM @InsertedIds;
         `);
@@ -172,20 +175,42 @@ async function createOrder(solicitud, respuesta) {
 async function updateOrderState(solicitud, respuesta) {
   const orderId = Number(solicitud.params.id);
   const estadoFrontend = solicitud.body?.estado;
-  if (!Number.isInteger(orderId) || orderId < 1 || !ESTADOS_ORDEN.includes(estadoFrontend)) {
+  if (!Number.isInteger(orderId) || orderId < 1 || !ESTADOS_SIGUIENTES.includes(estadoFrontend)) {
     throw new HttpError(400, 'Seleccione un estado válido para la comanda.');
   }
 
-  const estadoDb = mapearEstadoDb(estadoFrontend);
-
   const pool = await getPool();
-  const resultado = await pool.request()
-    .input('id', sql.Int, orderId)
-    .input('estado', sql.VarChar(20), estadoDb)
-    .query(`UPDATE dbo.ordenes SET estado = @estado WHERE id_orden = @id;`);
-  if (!resultado.rowsAffected[0]) throw new HttpError(404, 'No se encontró la comanda.');
+  const transaction = new sql.Transaction(pool);
+  await transaction.begin();
+  try {
+    const resultado = await new sql.Request(transaction)
+      .input('id', sql.Int, orderId)
+      .query(`
+        SELECT estado
+        FROM dbo.ordenes WITH (UPDLOCK, ROWLOCK)
+        WHERE id_orden = @id;
+      `);
+    if (!resultado.recordset.length) throw new HttpError(404, 'No se encontró la comanda.');
+
+    const estadoActual = mapearEstadoFrontend(resultado.recordset[0].estado);
+    if (SIGUIENTE_ESTADO_ORDEN[estadoActual] !== estadoFrontend) {
+      throw new HttpError(409, `La comanda ya no puede avanzar a ${estadoFrontend}. Actualice la vista e inténtelo de nuevo.`);
+    }
+
+    await new sql.Request(transaction)
+      .input('id', sql.Int, orderId)
+      .input('estado', sql.NVarChar(24), estadoFrontend)
+      .query(`UPDATE dbo.ordenes SET estado = @estado WHERE id_orden = @id;`);
+    await transaction.commit();
+  } catch (error) {
+    await transaction.rollback();
+    throw error;
+  }
+
   await registrarAuditoria(solicitud.usuario.id_empleado, `Comanda ${orderId}: estado ${estadoFrontend}`);
-  return respuesta.json({ mensaje: `Comanda #${orderId} actualizada a: ${estadoFrontend}.` });
+  return respuesta.json({
+    mensaje: `Comanda #${orderId} actualizada a: ${ETIQUETAS_ESTADO[estadoFrontend] || estadoFrontend}.`
+  });
 }
 
 async function payOrder(solicitud, respuesta) {
@@ -200,21 +225,50 @@ async function payOrder(solicitud, respuesta) {
   const orden = await pool.request()
     .input('id', sql.Int, orderId)
     .query(`
-      SELECT o.id_orden, ISNULL(SUM(d.subtotal), 0) AS total 
-      FROM dbo.ordenes o
-      LEFT JOIN dbo.detalle_ordenes d ON o.id_orden = d.id_orden
-      WHERE o.id_orden = @id
-      GROUP BY o.id_orden;
+      SELECT o.estado, COALESCE(detalle.total, 0) AS total,
+             CASE WHEN EXISTS (
+               SELECT 1 FROM dbo.pagos AS p WHERE p.id_orden = o.id_orden
+             ) THEN 1 ELSE 0 END AS pago_registrado
+      FROM dbo.ordenes AS o
+      OUTER APPLY (
+        SELECT SUM(d.subtotal) AS total
+        FROM dbo.detalle_ordenes AS d
+        WHERE d.id_orden = o.id_orden
+      ) AS detalle
+      WHERE o.id_orden = @id;
     `);
 
   if (!orden.recordset.length) throw new HttpError(404, 'No se encontró la comanda.');
-  const total = orden.recordset[0].total;
+  const { estado, total, pago_registrado: pagoRegistrado } = orden.recordset[0];
+  if (pagoRegistrado || ['Pagada', 'Pagado'].includes(estado)) {
+    throw new HttpError(409, 'La comanda ya tiene un pago registrado.');
+  }
+  if (!['Entregado', 'Servida'].includes(estado)) {
+    throw new HttpError(409, 'Solo se pueden cobrar comandas entregadas.');
+  }
 
   await pool.request()
-    .input('orderId', sql.Int, orderId)
-    .input('methodId', sql.Int, paymentMethodId)
+    .input('id_orden', sql.Int, orderId)
+    .input('id_metodo', sql.Int, paymentMethodId)
     .input('monto', sql.Decimal(10, 2), total)
     .execute('sp_ProcesarPagoTransaccion');
+
+  const verificacion = await pool.request()
+    .input('id', sql.Int, orderId)
+    .query(`
+      SELECT o.estado,
+             CASE WHEN EXISTS (
+               SELECT 1 FROM dbo.pagos AS p WHERE p.id_orden = o.id_orden
+             ) THEN 1 ELSE 0 END AS pago_registrado
+      FROM dbo.ordenes AS o
+      WHERE o.id_orden = @id;
+    `);
+  const cobroConfirmado = verificacion.recordset[0];
+  if (!cobroConfirmado ||
+      !['Pagada', 'Pagado'].includes(cobroConfirmado.estado) ||
+      !cobroConfirmado.pago_registrado) {
+    throw new HttpError(500, 'No se pudo confirmar el cobro en la base de datos. Actualice la comanda antes de reintentar.');
+  }
 
   await registrarAuditoria(solicitud.usuario.id_empleado, `Cobro registrado para la comanda ${orderId}`);
   return respuesta.json({ mensaje: 'Pago registrado exitosamente.' });
