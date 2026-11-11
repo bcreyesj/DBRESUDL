@@ -1,0 +1,76 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0B132B">
+  <meta name="description" content="Acceso al sistema de operación DBRestaurante.">
+  <title>Iniciar sesión — DBRestaurante</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script type="module" src="/js/login.js"></script>
+</head>
+<body>
+  <!-- THESIS: La operación del restaurante se coordina desde una sola puerta, sin pantallas de acceso impersonales.
+       OWN-WORLD: Azul noche, trazos de plano y nodos de servicio en cian; tipografía Syne con datos en Plus Jakarta Sans.
+       STORY: El equipo reconoce mesas, cocina y administración como un mismo sistema y accede según su rol.
+       FIRST VIEWPORT: Composición 40/60; mapa de servicio en el panel izquierdo y formulario centrado en el derecho.
+       FORM: Acceso editorial-operativo fijado por el requerimiento; no se ejecutó una tirada de concepto porque el mundo está explícitamente definido. -->
+  <main class="login-page">
+    <section class="login-art" aria-label="Identidad visual de DBRestaurante">
+      <a class="brand-lockup" href="/" aria-label="DBRestaurante, inicio">
+        <span class="brand-mark" aria-hidden="true">DB</span>
+        <span>
+          <span class="brand-name">DBRestaurante</span>
+          <span class="brand-subtitle">Sistema de operación</span>
+        </span>
+      </a>
+
+      <div class="login-art-copy">
+        <span class="eyebrow">Servicio, en sincronía</span>
+        <h1>La sala en movimiento.</h1>
+        <p>Mesas, cocina y equipo conectados en una sola operación.</p>
+        <div class="service-map" aria-hidden="true">
+          <div class="map-node"><strong>01</strong><span>SALA</span></div>
+          <div class="map-node"><strong>02</strong><span>COCINA</span></div>
+          <div class="map-node"><strong>03</strong><span>CAJA</span></div>
+        </div>
+      </div>
+
+      <p class="login-art-foot">Plataforma de gestión y punto de venta</p>
+    </section>
+
+    <section class="login-panel" aria-labelledby="login-title">
+      <div class="login-box">
+        <a class="brand-lockup login-wordmark-mobile" href="/" aria-label="DBRestaurante, inicio">
+          <span class="brand-mark" aria-hidden="true">DB</span>
+          <span>
+            <span class="brand-name">DBRestaurante</span>
+            <span class="brand-subtitle">Sistema de operación</span>
+          </span>
+        </a>
+
+        <span class="eyebrow">Panel de acceso</span>
+        <h2 id="login-title">Iniciar sesión</h2>
+        <p>Ingrese con su cuenta de trabajo para abrir su espacio de operación.</p>
+
+        <div id="login-message" class="notice" role="status" aria-live="polite"></div>
+        <form id="login-form" class="login-form" autocomplete="on">
+          <label class="field" for="usuario">
+            Usuario
+            <input id="usuario" name="usuario" type="text" autocomplete="username" required maxlength="60" placeholder="Su usuario">
+          </label>
+          <label class="field" for="contrasena">
+            Contraseña
+            <input id="contrasena" name="contrasena" type="password" autocomplete="current-password" required placeholder="Su contraseña">
+          </label>
+          <button id="login-submit" class="button" type="submit">Acceder al sistema <span aria-hidden="true">↗</span></button>
+        </form>
+
+        <p class="login-footnote">El acceso y las acciones disponibles dependen del rol asignado a su cuenta.</p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>

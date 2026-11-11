@@ -1,0 +1,232 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0B132B">
+  <meta name="description" content="Panel administrativo de DBRestaurante.">
+  <title>Panel de control: DBRestaurante</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script type="module" src="/js/admin.js"></script>
+</head>
+<body>
+  <!-- ==================== ESTRUCTURA: NAVEGACIÓN Y PERFIL ==================== -->
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Navegación administrativa">
+      <a class="brand-lockup" href="/admin/dashboard" aria-label="DBRestaurante">
+        <span class="brand-mark" aria-hidden="true">DB</span>
+        <span>
+          <span class="brand-name">DBRestaurante</span>
+          <span class="brand-subtitle">Panel de control</span>
+        </span>
+      </a>
+      <div class="sidebar-label">Operación</div>
+      <nav class="sidebar-nav">
+        <a class="nav-link" href="#overview" data-view="overview" aria-current="page"><span class="nav-icon" aria-hidden="true">▦</span>Resumen</a>
+        <a class="nav-link" href="#menu" data-view="menu"><span class="nav-icon" aria-hidden="true">◈</span>Gestión de menú</a>
+        <a class="nav-link" href="#staff" data-view="staff"><span class="nav-icon" aria-hidden="true">♙</span>Personal</a>
+        <a class="nav-link" href="#inventory" data-view="inventory"><span class="nav-icon" aria-hidden="true">▤</span>Inventario</a>
+        <a class="nav-link" href="#recipes" data-view="recipes"><span class="nav-icon" aria-hidden="true">⌘</span>Recetas</a>
+        <a class="nav-link" href="#sales" data-view="sales"><span class="nav-icon" aria-hidden="true">↗</span>Ventas y pagos</a>
+        <a class="nav-link" href="#audit" data-view="audit"><span class="nav-icon" aria-hidden="true">≋</span>Auditoría</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="user-chip">
+          <span id="user-avatar" class="avatar" aria-hidden="true">DB</span>
+          <span>
+            <span id="user-name" class="user-name">Administrador</span>
+            <span id="user-role" class="user-role">Administrador</span>
+          </span>
+        </div>
+        <button id="logout-button" class="logout-button" type="button">↪ &nbsp; Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-title">
+          <button id="mobile-menu" class="icon-button mobile-menu-button" type="button" aria-label="Abrir navegación" aria-expanded="false">☰</button>
+          <h1 id="page-title">Panel de Control</h1>
+        </div>
+        <span id="today-date" class="topbar-date"></span>
+      </header>
+
+      <!-- ==================== CONTENIDO: INDICADORES Y MÓDULOS ==================== -->
+      <div class="page-content">
+        <div id="admin-notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section id="view-overview" class="view is-active" aria-labelledby="overview-title">
+          <div class="section-heading">
+            <div>
+              <h2 id="overview-title">El restaurante, hoy</h2>
+              <p>Un vistazo a ventas, servicio y existencias que requieren atención.</p>
+            </div>
+            <button class="button button-secondary" type="button" data-refresh>↻ &nbsp; Actualizar datos</button>
+          </div>
+          <div class="kpi-grid">
+            <article class="surface kpi">
+              <div class="kpi-label">Ventas del día</div>
+              <div id="kpi-sales" class="kpi-value">Cargando</div>
+              <div class="kpi-note">Pagos registrados hoy</div>
+            </article>
+            <article class="surface kpi">
+              <div class="kpi-label">Órdenes activas</div>
+              <div id="kpi-orders" class="kpi-value">Cargando</div>
+              <div class="kpi-note">Comandas sin cerrar</div>
+            </article>
+            <article class="surface kpi">
+              <div class="kpi-label">Alertas de inventario</div>
+              <div id="kpi-stock" class="kpi-value">Cargando</div>
+              <div class="kpi-note">Ingredientes en mínimo o por debajo</div>
+            </article>
+          </div>
+          <div class="content-grid">
+            <section class="panel">
+              <div class="panel-header"><h3>Órdenes activas</h3><span class="eyebrow">Servicio actual</span></div>
+              <div class="table-wrap">
+                <table class="data-table">
+                  <thead><tr><th>Comanda</th><th>Mesa</th><th>Estado</th><th>Total</th></tr></thead>
+                  <tbody id="overview-orders"></tbody>
+                </table>
+              </div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Atención de inventario</h3><span class="status status-pending">Revisar</span></div>
+              <div id="overview-stock" class="panel-body low-stock-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="view-menu" class="view" aria-labelledby="menu-title">
+          <div class="section-heading">
+            <div><h2 id="menu-title">Gestión de menú</h2><p>Actualice platillos, precios, categorías y disponibilidad en sala.</p></div>
+            <div class="toolbar">
+              <button id="add-category" class="button button-secondary" type="button">+ Categoría</button>
+              <button id="add-dish" class="button" type="button">+ Nuevo platillo</button>
+            </div>
+          </div>
+          <section class="panel">
+            <div class="panel-header"><h3>Platillos</h3><span id="menu-count" class="muted small"></span></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Platillo</th><th>Categoría</th><th>Precio</th><th>Disponibilidad</th><th></th></tr></thead>
+                <tbody id="menu-table"></tbody>
+              </table>
+            </div>
+          </section>
+          <section class="panel panel-spaced">
+            <div class="panel-header"><h3>Categorías del menú</h3></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Nombre</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="categories-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-staff" class="view" aria-labelledby="staff-title">
+          <div class="section-heading">
+            <div><h2 id="staff-title">Personal</h2><p>Administre cuentas, roles y acceso al sistema.</p></div>
+            <button id="add-staff" class="button" type="button">+ Registrar empleado</button>
+          </div>
+          <section class="panel">
+            <div class="panel-header"><h3>Equipo registrado</h3></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Nombre</th><th>Usuario</th><th>Rol</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="staff-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-inventory" class="view" aria-labelledby="inventory-title">
+          <div class="section-heading">
+            <div><h2 id="inventory-title">Inventario</h2><p>Existencias actuales y niveles mínimos de ingredientes.</p></div>
+            <span id="inventory-alert-count" class="status status-pending">Cargando</span>
+          </div>
+          <section class="panel">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Ingrediente</th><th>Existencia</th><th>Mínimo</th><th>Unidad</th><th>Estado</th><th></th></tr></thead>
+                <tbody id="inventory-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-recipes" class="view" aria-labelledby="recipes-title">
+          <div class="section-heading">
+            <div><h2 id="recipes-title">Recetas</h2><p>Vincule ingredientes y cantidades con cada platillo del menú.</p></div>
+          </div>
+          <section class="panel">
+            <div class="panel-header"><h3>Platillos con receta</h3><span class="muted small">Seleccione una receta para editar sus ingredientes</span></div>
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Platillo</th><th>Categoría</th><th>Precio</th><th>Ingredientes</th><th></th></tr></thead>
+                <tbody id="recipes-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+
+        <section id="view-sales" class="view" aria-labelledby="sales-title">
+          <div class="section-heading">
+            <div><h2 id="sales-title">Ventas y pagos</h2><p>Ingresos registrados, actividad diaria y métodos de pago.</p></div>
+            <label class="field">Periodo
+              <select id="sales-period" class="inline-control" aria-label="Días del reporte">
+                <option value="7">Últimos 7 días</option>
+                <option value="30">Últimos 30 días</option>
+                <option value="90">Últimos 90 días</option>
+              </select>
+            </label>
+          </div>
+          <div class="kpi-grid">
+            <article class="surface kpi"><div class="kpi-label">Ingresos del periodo</div><div id="sales-total" class="kpi-value">Cargando</div><div class="kpi-note">Pagos confirmados</div></article>
+            <article class="surface kpi"><div class="kpi-label">Pagos recibidos</div><div id="sales-count" class="kpi-value">Cargando</div><div class="kpi-note">Transacciones registradas</div></article>
+            <article class="surface kpi"><div class="kpi-label">Métodos utilizados</div><div id="sales-method-count" class="kpi-value">Cargando</div><div class="kpi-note">Con pagos en el periodo</div></article>
+          </div>
+          <div class="content-grid">
+            <section class="panel">
+              <div class="panel-header"><h3>Ingresos por día</h3></div>
+              <div id="sales-daily" class="panel-body bar-list"></div>
+            </section>
+            <section class="panel">
+              <div class="panel-header"><h3>Método de pago</h3></div>
+              <div id="sales-methods" class="panel-body bar-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="view-audit" class="view" aria-labelledby="audit-title">
+          <div class="section-heading">
+            <div><h2 id="audit-title">Auditoría del sistema</h2><p>Registro reciente de acciones realizadas por el equipo.</p></div>
+          </div>
+          <section class="panel">
+            <div class="table-wrap">
+              <table class="data-table">
+                <thead><tr><th>Fecha</th><th>Usuario</th><th>Acción</th></tr></thead>
+                <tbody id="audit-table"></tbody>
+              </table>
+            </div>
+          </section>
+        </section>
+      </div>
+    </main>
+  </div>
+
+  <!-- ==================== COMPONENTE: CAJÓN LATERAL DE EDICIÓN ==================== -->
+  <div id="drawer-backdrop" class="drawer-backdrop" aria-hidden="true">
+    <section id="drawer" class="drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-title">
+      <div class="drawer-header">
+        <div><span class="eyebrow">DBRestaurante</span><h2 id="drawer-title">Editar registro</h2></div>
+        <button id="drawer-close" class="icon-button" type="button" aria-label="Cerrar formulario">×</button>
+      </div>
+      <div id="drawer-content"></div>
+    </section>
+  </div>
+</body>
+</html>

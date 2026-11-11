@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0B132B">
+  <meta name="description" content="Punto de venta y operación de mesas de DBRestaurante.">
+  <title>Punto de venta — DBRestaurante</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="/css/styles.css">
+  <script type="module" src="/js/employee.js"></script>
+</head>
+<body>
+  <!-- ==================== ESTRUCTURA: NAVEGACIÓN Y PERFIL ==================== -->
+  <div class="app-shell">
+    <aside id="sidebar" class="sidebar" aria-label="Navegación de servicio">
+      <a class="brand-lockup" href="/employee/dashboard" aria-label="DBRestaurante">
+        <span class="brand-mark" aria-hidden="true">DB</span>
+        <span>
+          <span class="brand-name">DBRestaurante</span>
+          <span class="brand-subtitle">Punto de venta</span>
+        </span>
+      </a>
+      <div class="sidebar-label">Servicio</div>
+      <nav class="sidebar-nav">
+        <a class="nav-link" href="#tables" data-view="tables" aria-current="page"><span class="nav-icon" aria-hidden="true">▦</span>Mapa de mesas</a>
+        <a class="nav-link" href="#pos" data-view="pos"><span class="nav-icon" aria-hidden="true">◈</span>Comanda actual</a>
+        <a class="nav-link" href="#kitchen" data-view="kitchen"><span class="nav-icon" aria-hidden="true">≋</span>Estado de órdenes</a>
+      </nav>
+      <div class="sidebar-bottom">
+        <div class="user-chip">
+          <span id="user-avatar" class="avatar" aria-hidden="true">DB</span>
+          <span>
+            <span id="user-name" class="user-name">Personal</span>
+            <span id="user-role" class="user-role">Personal de servicio</span>
+          </span>
+        </div>
+        <button id="logout-button" class="logout-button" type="button">↪ &nbsp; Cerrar sesión</button>
+      </div>
+    </aside>
+
+    <main class="main-area">
+      <header class="topbar">
+        <div class="topbar-title">
+          <button id="mobile-menu" class="icon-button mobile-menu-button" type="button" aria-label="Abrir navegación" aria-expanded="false">☰</button>
+          <h1 id="page-title">Mapa de Mesas</h1>
+        </div>
+        <div class="toolbar">
+          <span id="today-date" class="topbar-date"></span>
+          <button id="employee-refresh" class="icon-button" type="button" aria-label="Actualizar mesas y órdenes">↻</button>
+        </div>
+      </header>
+
+      <!-- ==================== CONTENIDO: MESAS, COMANDAS Y COCINA ==================== -->
+      <div class="page-content">
+        <div id="employee-notice" class="notice" role="status" aria-live="polite"></div>
+
+        <section id="view-tables" class="view is-active" aria-labelledby="tables-title">
+          <div class="section-heading">
+            <div><h2 id="tables-title">Mapa de mesas</h2><p>Seleccione una mesa disponible u ocupada para abrir su comanda.</p></div>
+            <div class="toolbar">
+              <span class="status status-completed">Disponible</span>
+              <span class="status status-preparing">Ocupada</span>
+              <span class="status status-pending">Reservada</span>
+              <span class="status status-alert">Limpieza</span>
+            </div>
+          </div>
+          <div id="floor-grid" class="floor-grid" aria-live="polite"></div>
+        </section>
+
+        <section id="view-pos" class="view" aria-labelledby="pos-title">
+          <div class="section-heading">
+            <div><h2 id="pos-title">Comanda actual</h2><p id="selected-table-label">Seleccione una mesa para comenzar.</p></div>
+            <button id="back-to-tables" class="button button-secondary" type="button">← &nbsp; Mapa de mesas</button>
+          </div>
+          <div class="pos-layout">
+            <section aria-label="Menú de platillos">
+              <div id="category-tabs" class="category-tabs" role="group" aria-label="Categorías de menú"></div>
+              <div id="dish-grid" class="dish-grid"></div>
+            </section>
+            <aside class="panel cart-panel" aria-label="Resumen de la comanda">
+              <div class="panel-header"><div><h3>Tu comanda</h3><span id="cart-table-label" class="muted small"></span></div><span id="cart-count" class="status status-neutral">0 artículos</span></div>
+              <div class="panel-body">
+                <div id="existing-order"></div>
+                <div id="cart-items" class="cart-table"></div>
+                <div id="cart-empty" class="empty-state">Agregue platillos del menú para preparar la comanda.</div>
+                <div class="cart-totals">
+                  <div class="cart-total-row"><span>Subtotal registrado</span><strong id="existing-total">$0.00</strong></div>
+                  <div class="cart-total-row"><span>Subtotal nuevo</span><strong id="draft-total">$0.00</strong></div>
+                  <div class="cart-total-row cart-total-final"><span>Total estimado</span><strong id="cart-total">$0.00</strong></div>
+                </div>
+                <div class="cart-actions">
+                  <button id="send-order" class="button" type="button" disabled>Enviar a cocina</button>
+                  <button id="clear-cart" class="button button-quiet" type="button">Vaciar selección</button>
+                </div>
+              </div>
+            </aside>
+          </div>
+        </section>
+
+        <section id="view-kitchen" class="view" aria-labelledby="kitchen-title">
+          <div class="section-heading">
+            <div><h2 id="kitchen-title">Estado de órdenes</h2><p>Avance cada comanda un paso; registre el pago cuando el servicio termine.</p></div>
+            <span id="active-order-count" class="status status-neutral">— órdenes</span>
+          </div>
+          <div id="kitchen-grid" class="kitchen-grid"></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</body>
+</html>
