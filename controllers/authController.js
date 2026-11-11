@@ -16,8 +16,14 @@ async function login(solicitud, respuesta) {
   const resultado = await pool.request()
     .input('usuario', sql.NVarChar(60), usuario.trim())
     .query(`
-      SELECT id_empleado, nombre, usuario, contrasena_hash, rol_id, estado
-      FROM dbo.empleados
+      SELECT 
+        id_usuario,
+        usuario,
+        contrasena AS contrasena_hash,
+        id_empleado,
+        rol_id,
+        activo AS estado
+      FROM dbo.usuarios
       WHERE usuario = @usuario;
     `);
   const empleado = resultado.recordset[0];
@@ -27,16 +33,17 @@ async function login(solicitud, respuesta) {
   }
 
   const identidad = {
-    id_empleado: empleado.id_empleado,
-    nombre: empleado.nombre,
+    id_empleado: empleado.id_empleado || empleado.id_usuario,
+    nombre: empleado.usuario,
     usuario: empleado.usuario,
-    rol_id: empleado.rol_id
+    rol_id: empleado.rol_id || 1
   };
+
   const token = jwt.sign(identidad, process.env.JWT_SECRET, {
     expiresIn: process.env.JWT_EXPIRES_IN || '8h'
   });
 
-  await registrarAuditoria(empleado.id_empleado, 'Inicio de sesión');
+  await registrarAuditoria(identidad.id_empleado, 'Inicio de sesión');
   return respuesta.json({ mensaje: 'Sesión iniciada correctamente.', token, usuario: identidad });
 }
 

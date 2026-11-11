@@ -1,17 +1,12 @@
-// ==================== CONFIGURACIÓN: CONEXIÓN A SQL SERVER ====================
-// Administra un único pool de conexiones y expone la API del controlador mssql.
-const sql = require('mssql');
+// ==================== CONFIGURACIÓN: CONEXIÓN A SQL SERVER (WINDOWS AUTH) ====================
+require('dotenv').config();
+const sql = require('mssql/msnodesqlv8');
+
+// Cadena de conexión nativa de Windows
+const connectionString = `Driver={ODBC Driver 17 for SQL Server};Server=${process.env.DB_SERVER || 'localhost'};Database=${process.env.DB_NAME || 'restaurante'};Trusted_Connection=yes;`;
 
 const configuracion = {
-  server: process.env.DB_SERVER,
-  port: Number(process.env.DB_PORT || 1433),
-  database: process.env.DB_NAME || 'DBRestaurante',
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  options: {
-    encrypt: process.env.DB_ENCRYPT === 'true',
-    trustServerCertificate: process.env.DB_TRUST_SERVER_CERTIFICATE === 'true'
-  },
+  connectionString: connectionString,
   pool: {
     max: 10,
     min: 0,
@@ -28,6 +23,7 @@ async function getPool() {
   if (!poolPrometido) {
     poolPrometido = sql.connect(configuracion).catch((error) => {
       poolPrometido = undefined;
+      console.error('Error al conectar con SQL Server:', error);
       throw error;
     });
   }

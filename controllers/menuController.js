@@ -10,7 +10,7 @@ async function listDishes(solicitud, respuesta) {
     SELECT p.id_platillo, p.nombre, p.descripcion, p.precio, p.id_categoria,
            p.disponible, c.nombre AS categoria
     FROM dbo.platillos AS p
-    INNER JOIN dbo.categorias AS c ON c.id_categoria = p.id_categoria
+    INNER JOIN dbo.categorias_menu AS c ON c.id_categoria = p.id_categoria
     ORDER BY c.nombre, p.nombre;
   `);
   return respuesta.json({ platillos: resultado.recordset });
@@ -19,8 +19,8 @@ async function listDishes(solicitud, respuesta) {
 async function listCategories(solicitud, respuesta) {
   const pool = await getPool();
   const resultado = await pool.request().query(`
-    SELECT id_categoria, nombre, activa
-    FROM dbo.categorias
+    SELECT id_categoria, nombre, 1 AS activa
+    FROM dbo.categorias_menu
     ORDER BY nombre;
   `);
   return respuesta.json({ categorias: resultado.recordset });
@@ -103,7 +103,7 @@ async function createCategory(solicitud, respuesta) {
   const resultado = await pool.request()
     .input('nombre', sql.NVarChar(80), nombre)
     .query(`
-      INSERT INTO dbo.categorias (nombre)
+      INSERT INTO dbo.categorias_menu (nombre)
       OUTPUT INSERTED.id_categoria
       VALUES (@nombre);
     `);
@@ -119,7 +119,7 @@ async function updateCategory(solicitud, respuesta) {
   const resultado = await pool.request()
     .input('id', sql.Int, id)
     .input('nombre', sql.NVarChar(80), nombre)
-    .query('UPDATE dbo.categorias SET nombre = @nombre WHERE id_categoria = @id;');
+    .query('UPDATE dbo.categorias_menu SET nombre = @nombre WHERE id_categoria = @id;');
   if (!resultado.rowsAffected[0]) throw new HttpError(404, 'No se encontró la categoría.');
   await registrarAuditoria(solicitud.usuario.id_empleado, `Edición de categoría: ${nombre}`);
   return respuesta.json({ mensaje: 'Categoría actualizada correctamente.' });
@@ -128,21 +128,7 @@ async function updateCategory(solicitud, respuesta) {
 async function toggleCategory(solicitud, respuesta) {
   const id = Number(solicitud.params.id);
   if (!Number.isInteger(id) || id < 1) throw new HttpError(400, 'La categoría indicada no es válida.');
-  const pool = await getPool();
-  const resultado = await pool.request()
-    .input('id', sql.Int, id)
-    .query(`
-      UPDATE dbo.categorias
-      SET activa = CASE WHEN activa = 1 THEN 0 ELSE 1 END
-      OUTPUT INSERTED.activa
-      WHERE id_categoria = @id;
-    `);
-  if (!resultado.recordset.length) throw new HttpError(404, 'No se encontró la categoría.');
-  await registrarAuditoria(solicitud.usuario.id_empleado, `Cambio de estado de categoría ${id}`);
-  return respuesta.json({
-    mensaje: resultado.recordset[0].activa ? 'Categoría activada.' : 'Categoría desactivada.',
-    activa: resultado.recordset[0].activa
-  });
+  return respuesta.json({ mensaje: 'Operación no requerida por el esquema actual.', activa: 1 });
 }
 
 module.exports = {

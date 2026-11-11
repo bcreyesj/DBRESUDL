@@ -27,8 +27,8 @@ async function updateIngredient(solicitud, respuesta) {
   const pool = await getPool();
   const resultado = await pool.request()
     .input('id', sql.Int, id)
-    .input('stock', sql.Decimal(12, 3), stockActual)
-    .input('minimo', sql.Decimal(12, 3), stockMinimo)
+    .input('stock', sql.Decimal(10, 2), stockActual)
+    .input('minimo', sql.Decimal(10, 2), stockMinimo)
     .query(`
       UPDATE dbo.ingredientes
       SET stock_actual = @stock, stock_minimo = @minimo
@@ -102,7 +102,7 @@ async function saveRecipe(solicitud, respuesta) {
       await new sql.Request(transaction)
         .input('dishId', sql.Int, dishId)
         .input('ingredientId', sql.Int, linea.id)
-        .input('quantity', sql.Decimal(12, 3), linea.cantidad)
+        .input('quantity', sql.Decimal(10, 2), linea.cantidad)
         .query(`
           INSERT INTO dbo.recetas (id_platillo, id_ingrediente, cantidad_requerida)
           VALUES (@dishId, @ingredientId, @quantity);

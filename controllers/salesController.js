@@ -10,30 +10,30 @@ async function getSales(solicitud, respuesta) {
     pool.request()
       .input('dias', sql.Int, dias)
       .query(`
-        SELECT CAST(COALESCE(SUM(monto), 0) AS DECIMAL(12,2)) AS ingresos,
+        SELECT CAST(COALESCE(SUM(monto_total), 0) AS DECIMAL(12,2)) AS ingresos,
                COUNT(*) AS cantidad_pagos
         FROM dbo.pagos
-        WHERE fecha_pago >= DATEADD(day, -@dias + 1, CONVERT(date, GETDATE()));
+        WHERE fecha_hora >= DATEADD(day, -@dias + 1, CONVERT(date, GETDATE()));
       `),
     pool.request()
       .input('dias', sql.Int, dias)
       .query(`
-        SELECT mp.nombre AS metodo, CAST(SUM(p.monto) AS DECIMAL(12,2)) AS monto,
+        SELECT mp.nombre AS metodo, CAST(SUM(p.monto_total) AS DECIMAL(12,2)) AS monto,
                COUNT(*) AS cantidad
         FROM dbo.pagos AS p
-        INNER JOIN dbo.metodos_pago AS mp ON mp.id_metodo_pago = p.id_metodo_pago
-        WHERE p.fecha_pago >= DATEADD(day, -@dias + 1, CONVERT(date, GETDATE()))
+        INNER JOIN dbo.metodos_pago AS mp ON mp.id_metodo = p.id_metodo
+        WHERE p.fecha_hora >= DATEADD(day, -@dias + 1, CONVERT(date, GETDATE()))
         GROUP BY mp.nombre
         ORDER BY monto DESC;
       `),
     pool.request()
       .input('dias', sql.Int, dias)
       .query(`
-        SELECT CONVERT(date, fecha_pago) AS fecha,
-               CAST(SUM(monto) AS DECIMAL(12,2)) AS ingresos
+        SELECT CONVERT(date, fecha_hora) AS fecha,
+               CAST(SUM(monto_total) AS DECIMAL(12,2)) AS ingresos
         FROM dbo.pagos
-        WHERE fecha_pago >= DATEADD(day, -@dias + 1, CONVERT(date, GETDATE()))
-        GROUP BY CONVERT(date, fecha_pago)
+        WHERE fecha_hora >= DATEADD(day, -@dias + 1, CONVERT(date, GETDATE()))
+        GROUP BY CONVERT(date, fecha_hora)
         ORDER BY fecha;
       `)
   ]);
@@ -48,9 +48,8 @@ async function getSales(solicitud, respuesta) {
 async function listPaymentMethods(solicitud, respuesta) {
   const pool = await getPool();
   const resultado = await pool.request().query(`
-    SELECT id_metodo_pago, nombre
+    SELECT id_metodo AS id_metodo_pago, nombre
     FROM dbo.metodos_pago
-    WHERE activo = 1
     ORDER BY nombre;
   `);
   return respuesta.json({ metodos: resultado.recordset });

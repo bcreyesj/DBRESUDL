@@ -7,10 +7,10 @@ async function getOverview(solicitud, respuesta) {
   const [indicadores, alertas, actividad] = await Promise.all([
     pool.request().query(`
       SELECT
-        CAST(COALESCE((SELECT SUM(p.monto) FROM dbo.pagos AS p
-          WHERE CONVERT(date, p.fecha_pago) = CONVERT(date, GETDATE())), 0) AS DECIMAL(12,2)) AS ventas_hoy,
+        CAST(COALESCE((SELECT SUM(p.monto_total) FROM dbo.pagos AS p
+          WHERE CONVERT(date, p.fecha_hora) = CONVERT(date, GETDATE())), 0) AS DECIMAL(12,2)) AS ventas_hoy,
         (SELECT COUNT(*) FROM dbo.ordenes AS o
-          WHERE o.estado NOT IN (N'Pagado', N'Cancelado')) AS ordenes_activas,
+          WHERE o.estado NOT IN (N'Pagada', N'Cancelada')) AS ordenes_activas,
         (SELECT COUNT(*) FROM dbo.ingredientes AS i
           WHERE i.stock_actual <= i.stock_minimo) AS alertas_stock;
     `),
@@ -21,13 +21,15 @@ async function getOverview(solicitud, respuesta) {
       ORDER BY (stock_minimo - stock_actual) DESC, nombre;
     `),
     pool.request().query(`
-      SELECT TOP (5) o.id_orden, o.estado, o.total, o.fecha_hora, m.numero_mesa
+      SELECT TOP (5) o.id_orden, o.estado, ISNULL(p.monto_total, 0) AS total, o.fecha_hora, m.numero_mesa
       FROM dbo.ordenes AS o
       INNER JOIN dbo.mesas AS m ON m.id_mesa = o.id_mesa
-      WHERE o.estado NOT IN (N'Pagado', N'Cancelado')
+      LEFT JOIN dbo.pagos AS p ON p.id_orden = o.id_orden
+      WHERE o.estado NOT IN (N'Pagada', N'Cancelada')
       ORDER BY o.fecha_hora DESC;
     `)
   ]);
+
   return respuesta.json({
     indicadores: indicadores.recordset[0],
     alertas: alertas.recordset,
