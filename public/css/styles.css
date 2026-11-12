@@ -327,18 +327,22 @@ h3 { margin-bottom: 6px; font-size: var(--type-title); line-height: 1.3; }
 .cart-total-row strong { color: var(--text); }
 .cart-total-final { padding-top: 11px; border-top: 1px solid var(--line-strong); font-size: var(--type-body); }
 .cart-actions { display: grid; gap: 8px; margin-top: 16px; }
-.kitchen-grid { display: grid; grid-template-columns: repeat(4,minmax(210px,1fr)); gap: 13px; overflow-x: auto; padding-bottom: 8px; }
-.kitchen-column { min-height: 190px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-kitchen); }
+.kitchen-grid { display: grid; grid-template-columns: repeat(4,minmax(0,1fr)); gap: 13px; }
+.kitchen-column { min-width: 0; min-height: 190px; border: 1px solid var(--line); border-radius: 13px; background: var(--surface-kitchen); }
 .kitchen-column-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 14px; border-bottom: 1px solid var(--line); }
 .kitchen-column-header h3 { margin: 0; font-size: var(--type-control); }
 .kitchen-count { color: var(--muted); font-size: var(--type-caption); }
-.kitchen-cards { display: grid; gap: 9px; padding: 9px; }
-.order-card { padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-order); }
+.kitchen-cards { display: grid; min-width: 0; gap: 9px; padding: 9px; }
+.order-card { min-width: 0; padding: 13px; border: 1px solid var(--line); border-radius: 11px; background: var(--surface-order); }
 .order-card-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; margin-bottom: 9px; }
+.order-card-head > div { min-width: 0; }
+.order-card-head .status { flex-shrink: 0; }
 .order-card h4 { margin: 0; font-family: var(--display); font-size: var(--type-body); }
-.order-lines { margin: 0 0 12px; padding-left: 16px; color: var(--muted); font-size: var(--type-caption); line-height: 1.7; }
-.order-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-.payment-actions { display: flex; align-items: center; gap: 6px; }
+.order-lines { overflow-wrap: anywhere; margin: 0 0 12px; padding-left: 16px; color: var(--muted); font-size: var(--type-caption); line-height: 1.7; }
+.order-card-foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+.order-card-foot > strong { white-space: nowrap; }
+.payment-actions { display: flex; width: 100%; min-width: 0; align-items: center; gap: 6px; }
+.payment-actions .inline-control { min-width: 0; flex: 1; }
 .recipe-row { display: grid; grid-template-columns: minmax(0,1.3fr) minmax(90px,.7fr) 38px; align-items: end; gap: 8px; margin-bottom: 12px; }
 .recipe-row .field { min-width: 0; }
 .recipe-ingredient-search { min-height: 38px !important; }
@@ -364,6 +368,7 @@ h3 { margin-bottom: 6px; font-size: var(--type-title); line-height: 1.3; }
   :root { --sidebar-width: 220px; }
   .floor-grid { grid-template-columns: repeat(3,minmax(110px,1fr)); }
   .pos-layout { grid-template-columns: minmax(0,1.2fr) minmax(270px,.8fr); }
+  .kitchen-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 860px) {
   .login-page { grid-template-columns: minmax(275px,.8fr) minmax(360px,1.2fr); }
@@ -376,7 +381,7 @@ h3 { margin-bottom: 6px; font-size: var(--type-title); line-height: 1.3; }
   .content-grid { grid-template-columns: 1fr; }
   .pos-layout { grid-template-columns: 1fr; }
   .cart-panel { position: static; }
-  .kitchen-grid { grid-template-columns: repeat(4,minmax(230px,1fr)); }
+  .kitchen-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
 }
 @media (max-width: 620px) {
   .login-page { display: block; }
@@ -410,12 +415,10 @@ h3 { margin-bottom: 6px; font-size: var(--type-title); line-height: 1.3; }
   .drawer { padding: 21px 17px; }
   .toolbar { width: 100%; }
   .toolbar .button { flex: 1; }
-  .kitchen-grid { grid-template-columns: minmax(0, 1fr); overflow: visible; gap: 12px; }
+  .kitchen-grid { grid-template-columns: minmax(0, 1fr); gap: 12px; }
   .kitchen-column { min-height: 0; }
   .order-card-foot { align-items: stretch; flex-wrap: wrap; }
   .order-card-foot > .button { min-height: 44px; }
-  .payment-actions { width: 100%; }
-  .payment-actions .inline-control { min-width: 0; min-height: 44px; flex: 1; }
   .payment-actions .button { min-height: 44px; }
   .button-small { min-height: 44px; }
   .bar-item { grid-template-columns: 80px 1fr auto; gap: 8px; }
