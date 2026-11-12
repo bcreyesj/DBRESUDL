@@ -28,34 +28,49 @@ async function createStaff(solicitud, respuesta) {
 
   const hash = await bcrypt.hash(contrasena, 10);
   const pool = await getPool();
-  
-  // Insertar primero empleado
-  const resEmp = await pool.request()
-    .input('nombre', sql.VarChar(100), nombre.trim())
-    .input('rol', sql.Int, rol)
-    .query(`
-      INSERT INTO dbo.empleados (nombre, id_rol)
-      OUTPUT INSERTED.id_empleado
-      VALUES (@nombre, @rol);
-    `);
-  
-  const idEmpleado = resEmp.recordset[0].id_empleado;
+  const transaccion = new sql.Transaction(pool);
+  await transaccion.begin();
+  let idUsuario;
+  try {
+    const resEmp = await new sql.Request(transaccion)
+      .input('nombre', sql.VarChar(100), nombre.trim())
+      .input('rol', sql.Int, rol)
+      .query(`
+        DECLARE @empleadosInsertados TABLE (id_empleado INT);
 
-  // Insertar usuario
-  const resUser = await pool.request()
-    .input('usuario', sql.VarChar(50), usuario.trim())
-    .input('hash', sql.VarChar(255), hash)
-    .input('correo', sql.VarChar(100), `${usuario.trim()}@restaurante.com`)
-    .input('id_empleado', sql.Int, idEmpleado)
-    .input('rol', sql.Int, rol)
-    .query(`
-      INSERT INTO dbo.usuarios (usuario, contrasena, correo, id_empleado, rol_id, activo)
-      OUTPUT INSERTED.id_usuario
-      VALUES (@usuario, @hash, @correo, @id_empleado, @rol, 1);
-    `);
+        INSERT INTO dbo.empleados (nombre, id_rol)
+        OUTPUT INSERTED.id_empleado INTO @empleadosInsertados
+        VALUES (@nombre, @rol);
+
+        SELECT id_empleado FROM @empleadosInsertados;
+      `);
+
+    const idEmpleado = resEmp.recordset[0].id_empleado;
+    const resUser = await new sql.Request(transaccion)
+      .input('usuario', sql.VarChar(50), usuario.trim())
+      .input('hash', sql.VarChar(255), hash)
+      .input('correo', sql.VarChar(100), `${usuario.trim()}@restaurante.com`)
+      .input('id_empleado', sql.Int, idEmpleado)
+      .input('rol', sql.Int, rol)
+      .query(`
+        DECLARE @usuariosInsertados TABLE (id_usuario INT);
+
+        INSERT INTO dbo.usuarios (usuario, contrasena, correo, id_empleado, rol_id, activo)
+        OUTPUT INSERTED.id_usuario INTO @usuariosInsertados
+        VALUES (@usuario, @hash, @correo, @id_empleado, @rol, 1);
+
+        SELECT id_usuario FROM @usuariosInsertados;
+      `);
+
+    idUsuario = resUser.recordset[0].id_usuario;
+    await transaccion.commit();
+  } catch (error) {
+    await transaccion.rollback();
+    throw error;
+  }
 
   await registrarAuditoria(solicitud.usuario.id_empleado, `Alta de personal: ${usuario.trim()}`);
-  return respuesta.status(201).json({ mensaje: 'Empleado registrado correctamente.', id_empleado: resUser.recordset[0].id_usuario });
+  return respuesta.status(201).json({ mensaje: 'Empleado registrado correctamente.', id_empleado: idUsuario });
 }
 
 async function updateStaff(solicitud, respuesta) {
